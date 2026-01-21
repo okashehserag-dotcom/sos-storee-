@@ -362,6 +362,11 @@
   function bindGlobalHandlers(){
     document.addEventListener("click", (e) => {
       const close = e.target.closest("[data-close]");
+   if (close.dataset.close === "collection") {
+  document.getElementById("collectionDrawer").classList.remove("is-open");
+  document.body.style.overflow = "";
+  return;
+}
       if(close){
         const key = close.dataset.close;
         if(key === "comment") closeComments();
@@ -724,3 +729,4 @@
     localStorage.setItem(key, JSON.stringify(val));
   }
 })();
+
