@@ -28,11 +28,12 @@
       for(let i=0;i<22;i++){
         const id = `p${n++}`;
         const title = `SOS Item ${id.toUpperCase()}`;
-        const desc = "صورة داخلية باسم المحل + وصف جاهز للتعبئة بدون تعقيد.";
+        const desc = "صورة داخلية باسم المحل + وصف جاهز للتعبئة.";
         const price = 10 + (n % 13) * 4;
         const createdAt = now - (n * day);
         items.push({
-          id, title, desc, price, tags: Array.from(new Set(tags.concat(i%3===0?["popular"]:[]).concat(i%5===0?["limited"]:[]))),
+          id, title, desc, price,
+          tags: Array.from(new Set(tags.concat(i%3===0?["popular"]:[]).concat(i%5===0?["limited"]:[]))),
           collection: collectionId,
           createdAt,
           image: placeholderImg(STORE.brand, title)
@@ -98,14 +99,14 @@
     sort: "featured",
     pageSize: 20,
     page: 1,
-    collectionId: null,
-    collectionItems: []
+    collectionId: null
   };
+
+  let revealIO = null;
 
   document.addEventListener("DOMContentLoaded", () => {
     $("#year").textContent = String(new Date().getFullYear());
     initTheme();
-    initReveal();
     initTopButton();
     initControls();
     buildTagSelects();
@@ -113,7 +114,32 @@
     renderProducts(false);
     bindGlobalHandlers();
     syncCounts();
+    setupReveal();          // ✅ بعد بناء العناصر
+    refreshReveal();        // ✅ رصد كل شيء (بما فيها عناصر ديناميكية)
   });
+
+  function setupReveal(){
+    if(!("IntersectionObserver" in window)){
+      $$(".reveal").forEach(e=>e.classList.add("is-in"));
+      return;
+    }
+    if(revealIO) return;
+    revealIO = new IntersectionObserver((entries) => {
+      entries.forEach(en => {
+        if(!en.isIntersecting) return;
+        en.target.classList.add("is-in");
+        revealIO.unobserve(en.target);
+      });
+    }, {threshold:0.12});
+  }
+
+  function refreshReveal(){
+    if(!revealIO){
+      $$(".reveal").forEach(e=>e.classList.add("is-in"));
+      return;
+    }
+    $$(".reveal:not(.is-in)").forEach(e => revealIO.observe(e));
+  }
 
   function initTheme(){
     const saved = localStorage.getItem(LS.theme);
@@ -126,19 +152,6 @@
       localStorage.setItem(LS.theme, next);
       toast(next === "beige" ? "Beige" : next === "dark" ? "Dark" : "Red");
     });
-  }
-
-  function initReveal(){
-    const els = $$(".reveal");
-    if(!("IntersectionObserver" in window)){ els.forEach(e=>e.classList.add("is-in")); return; }
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach(en => {
-        if(!en.isIntersecting) return;
-        en.target.classList.add("is-in");
-        io.unobserve(en.target);
-      });
-    }, {threshold:0.12});
-    els.forEach(e=>io.observe(e));
   }
 
   function initTopButton(){
@@ -156,6 +169,7 @@
       state.search = s.value.trim().toLowerCase();
       state.page = 1;
       renderProducts(false);
+      refreshReveal();
     }, 140));
 
     clear.addEventListener("click", () => {
@@ -163,6 +177,7 @@
       state.search = "";
       state.page = 1;
       renderProducts(false);
+      refreshReveal();
       toast("تم مسح البحث");
     });
 
@@ -170,12 +185,14 @@
       state.tag = e.target.value;
       state.page = 1;
       renderProducts(false);
+      refreshReveal();
     });
 
     $("#sortSelect").addEventListener("change", (e) => {
       state.sort = e.target.value;
       state.page = 1;
       renderProducts(false);
+      refreshReveal();
     });
 
     $("#resetBtn").addEventListener("click", () => {
@@ -187,12 +204,14 @@
       $("#tagSelect").value = "all";
       $("#sortSelect").value = "featured";
       renderProducts(false);
+      refreshReveal();
       toast("Reset");
     });
 
     $("#loadMore").addEventListener("click", () => {
       state.page += 1;
       renderProducts(true);
+      refreshReveal();
     });
   }
 
@@ -223,6 +242,7 @@
       el.addEventListener("keydown", (e) => { if(e.key === "Enter") openCollection(c.id); });
       grid.appendChild(el);
     });
+    refreshReveal();
   }
 
   function openCollection(collectionId){
@@ -233,19 +253,33 @@
     $("#collectionTitle").textContent = c.title;
     $("#collectionSub").textContent = c.sub;
 
-    const drawer = $("#collectionDrawer");
-    drawer.setAttribute("data-color", c.color);
-
+    $("#collectionDrawer").setAttribute("data-color", c.color);
     $("#collectionSearch").value = "";
     $("#collectionFilter").value = "all";
 
-    const base = STORE.products.filter(p => p.collection === c.id);
-    state.collectionItems = base.slice(0, 20);
-
-    renderCollectionGrid(state.collectionItems);
-    $("#colCount").textContent = `${state.collectionItems.length} / ${base.length}`;
+    filterCollection(true);
     openDrawer("collection");
     toast(`Opened: ${c.title}`);
+  }
+
+  function filterCollection(initial=false){
+    const q = $("#collectionSearch").value.trim().toLowerCase();
+    const tg = $("#collectionFilter").value;
+    const base = STORE.products.filter(p => p.collection === state.collectionId);
+
+    let items = base.slice();
+    if(tg !== "all") items = items.filter(p => (p.tags||[]).includes(tg));
+    if(q) items = items.filter(p =>
+      (p.title||"").toLowerCase().includes(q) ||
+      (p.desc||"").toLowerCase().includes(q) ||
+      (p.tags||[]).some(t=>t.includes(q))
+    );
+
+    const page20 = items.slice(0, 20);
+    renderCollectionGrid(page20);
+    $("#colCount").textContent = `${page20.length} / ${base.length}`;
+    if(!initial) toast("تم تحديث نتائج القسم");
+    refreshReveal();
   }
 
   function renderCollectionGrid(items){
@@ -255,21 +289,7 @@
       grid.innerHTML = `<div class="muted">لا يوجد نتائج</div>`;
       return;
     }
-    items.forEach(p => grid.appendChild(productCard(p, true)));
-  }
-
-  function filterCollection(){
-    const q = $("#collectionSearch").value.trim().toLowerCase();
-    const tg = $("#collectionFilter").value;
-    const base = STORE.products.filter(p => p.collection === state.collectionId);
-
-    let items = base.slice();
-    if(tg !== "all") items = items.filter(p => (p.tags||[]).includes(tg));
-    if(q) items = items.filter(p => (p.title||"").toLowerCase().includes(q) || (p.desc||"").toLowerCase().includes(q) || (p.tags||[]).some(t=>t.includes(q)));
-
-    state.collectionItems = items.slice(0, 20);
-    renderCollectionGrid(state.collectionItems);
-    $("#colCount").textContent = `${state.collectionItems.length} / ${base.length}`;
+    items.forEach(p => grid.appendChild(productCard(p)));
   }
 
   function renderProducts(append){
@@ -282,7 +302,7 @@
     const existing = append ? grid.children.length : 0;
     const chunk = slice.slice(existing);
 
-    chunk.forEach(p => grid.appendChild(productCard(p, false)));
+    chunk.forEach(p => grid.appendChild(productCard(p)));
     $("#loadMore").style.display = slice.length < all.length ? "inline-flex" : "none";
   }
 
@@ -306,7 +326,6 @@
       case "nameAZ": items.sort((a,b)=> (a.title||"").localeCompare(b.title||"", "ar")); break;
       default: items.sort((a,b)=> scoreFeatured(b) - scoreFeatured(a));
     }
-
     return items;
   }
 
@@ -318,7 +337,7 @@
   function productCard(p){
     const liked = isLiked(p.id);
     const el = document.createElement("article");
-    el.className = "product";
+    el.className = "product reveal";
     el.innerHTML = `
       <div class="product__media">
         <img src="${escAttr(p.image)}" alt="SOS STORE" loading="lazy" decoding="async">
@@ -384,8 +403,8 @@
     $("#cartBtn").addEventListener("click", () => { renderCart(); openDrawer("cart"); });
     $("#wishBtn").addEventListener("click", () => { renderWish(); openDrawer("wish"); });
 
-    $("#clearCart").addEventListener("click", () => { clearCart(); });
-    $("#clearWish").addEventListener("click", () => { clearWish(); });
+    $("#clearCart").addEventListener("click", clearCart);
+    $("#clearWish").addEventListener("click", clearWish);
 
     $("#checkoutBtn").addEventListener("click", () => {
       const cart = getJSON(LS.cart, {});
@@ -430,13 +449,12 @@
       toast("تم مسح التعليقات");
     });
 
-    $("#collectionSearch").addEventListener("input", debounce(filterCollection, 140));
-    $("#collectionFilter").addEventListener("change", filterCollection);
+    $("#collectionSearch").addEventListener("input", debounce(() => filterCollection(false), 140));
+    $("#collectionFilter").addEventListener("change", () => filterCollection(false));
 
     $("#collectionClear").addEventListener("click", () => {
       $("#collectionSearch").value = "";
-      filterCollection();
-      toast("تم مسح بحث القسم");
+      filterCollection(false);
     });
 
     ["cartDrawer","wishDrawer","collectionDrawer"].forEach(id => {
@@ -497,7 +515,6 @@
     $("#commentModal").classList.add("is-open");
     $("#commentModal").setAttribute("aria-hidden","false");
     renderComments(productId);
-    toast("Comments");
   }
 
   function closeComments(){
