@@ -26,8 +26,8 @@
 
     const make = (collectionId, tags) => {
       for(let i=0;i<22;i++){
-        const id = p${n++};
-        const title = SOS Item ${id.toUpperCase()};
+        const id = `p${n++}`;
+        const title = `SOS Item ${id.toUpperCase()}`;
         const desc = "صورة داخلية باسم المحل + وصف جاهز للتعبئة بدون تعقيد.";
         const price = 10 + (n % 13) * 4;
         const createdAt = now - (n * day);
@@ -58,7 +58,7 @@
     const t1 = escXML((brand || "SOS STORE").slice(0,18));
     const t2 = escXML((title || "SOON").slice(0,22));
     const svg =
-      <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200">
+      `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200">
         <defs>
           <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" stop-color="${bg}" stop-opacity="1"/>
@@ -73,8 +73,8 @@
         <text x="50%" y="46%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="96" fill="${fg}" opacity=".92" letter-spacing="10">${t1}</text>
         <text x="50%" y="57%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="34" fill="${fg}" opacity=".60">${t2}</text>
         <text x="50%" y="66%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="30" fill="${fg}" opacity=".55">SOON</text>
-      </svg>;
-    return data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)};
+      </svg>`;
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   }
 
   function escXML(s){
@@ -86,10 +86,10 @@
 
   const LS = {
     theme: "sos_theme_v2",
-    like: (id) => sos_like_${id},
+    like: (id) => `sos_like_${id}`,
     wish: "sos_wish_v2",
     cart: "sos_cart_v2",
-    comments: (id) => sos_comments_${id}
+    comments: (id) => `sos_comments_${id}`
   };
 
   const state = {
@@ -197,7 +197,7 @@
   }
 
   function buildTagSelects(){
-    const options = STORE.tags.map(t => <option value="${t}">${t.toUpperCase()}</option>).join("");
+    const options = STORE.tags.map(t => `<option value="${t}">${t.toUpperCase()}</option>`).join("");
     $("#tagSelect").innerHTML = options;
     $("#collectionFilter").innerHTML = options;
     $("#tagSelect").value = "all";
@@ -212,13 +212,13 @@
       el.className = "collectionCard reveal";
       el.tabIndex = 0;
       el.setAttribute("role","button");
-      el.innerHTML = 
+      el.innerHTML = `
         <div class="collectionCard__top">
           <div class="collectionCard__title">${esc(c.title)}</div>
           <div class="collectionCard__sub">${esc(c.sub)}</div>
         </div>
         <div class="collectionCard__bar"></div>
-      ;
+      `;
       el.addEventListener("click", () => openCollection(c.id));
       el.addEventListener("keydown", (e) => { if(e.key === "Enter") openCollection(c.id); });
       grid.appendChild(el);
@@ -243,16 +243,16 @@
     state.collectionItems = base.slice(0, 20);
 
     renderCollectionGrid(state.collectionItems);
-    $("#colCount").textContent = ${state.collectionItems.length} / ${base.length};
+    $("#colCount").textContent = `${state.collectionItems.length} / ${base.length}`;
     openDrawer("collection");
-    toast(Opened: ${c.title});
+    toast(`Opened: ${c.title}`);
   }
 
   function renderCollectionGrid(items){
     const grid = $("#collectionGrid");
     grid.innerHTML = "";
     if(items.length === 0){
-      grid.innerHTML = <div class="muted">لا يوجد نتائج</div>;
+      grid.innerHTML = `<div class="muted">لا يوجد نتائج</div>`;
       return;
     }
     items.forEach(p => grid.appendChild(productCard(p, true)));
@@ -269,7 +269,7 @@
 
     state.collectionItems = items.slice(0, 20);
     renderCollectionGrid(state.collectionItems);
-    $("#colCount").textContent = ${state.collectionItems.length} / ${base.length};
+    $("#colCount").textContent = `${state.collectionItems.length} / ${base.length}`;
   }
 
   function renderProducts(append){
@@ -319,7 +319,7 @@
     const liked = isLiked(p.id);
     const el = document.createElement("article");
     el.className = "product";
-    el.innerHTML = 
+    el.innerHTML = `
       <div class="product__media">
         <img src="${escAttr(p.image)}" alt="SOS STORE" loading="lazy" decoding="async">
       </div>
@@ -336,7 +336,7 @@
           <button class="actionBtn" data-add="${escAttr(p.id)}">Add</button>
         </div>
       </div>
-    ;
+    `;
     return el;
   }
 
@@ -395,12 +395,12 @@
       const lines = ids.map(id => {
         const p = STORE.products.find(x => x.id === id);
         const q = cart[id];
-        return p ? ${p.title} × ${q} : "";
+        return p ? `${p.title} × ${q}` : "";
       }).filter(Boolean);
 
-      const msg = encodeURIComponent(طلب جديد من ${STORE.brand}:\n + lines.join("\n"));
+      const msg = encodeURIComponent(`طلب جديد من ${STORE.brand}:\n` + lines.join("\n"));
       if(STORE.checkoutWhatsApp){
-        window.open(https://wa.me/${STORE.checkoutWhatsApp}?text=${msg}, "_blank");
+        window.open(`https://wa.me/${STORE.checkoutWhatsApp}?text=${msg}`, "_blank");
       }else{
         window.open(STORE.instagram, "_blank");
       }
@@ -487,7 +487,7 @@
     const p = STORE.products.find(x => x.id === productId);
     if(!p) return;
 
-    $("#commentTitle").textContent = تعليقات: ${p.title};
+    $("#commentTitle").textContent = `تعليقات: ${p.title}`;
     $("#commentSub").textContent = "بدون نجوم — تعليق فقط";
     $("#commentForm").dataset.pid = productId;
 
@@ -512,10 +512,10 @@
     const list = $("#commentList");
     const items = getJSON(LS.comments(productId), []);
     if(items.length === 0){
-      list.innerHTML = <div class="comment"><div class="comment__top"><div class="comment__name">لا يوجد تعليقات</div><div class="comment__time">جاهز</div></div><div class="comment__text">اكتب أول تعليق.</div></div>;
+      list.innerHTML = `<div class="comment"><div class="comment__top"><div class="comment__name">لا يوجد تعليقات</div><div class="comment__time">جاهز</div></div><div class="comment__text">اكتب أول تعليق.</div></div>`;
       return;
     }
-    list.innerHTML = items.slice(0, 80).map(c => 
+    list.innerHTML = items.slice(0, 80).map(c => `
       <div class="comment">
         <div class="comment__top">
           <div class="comment__name">${esc(c.name)}</div>
@@ -523,7 +523,7 @@
         </div>
         <div class="comment__text">${esc(c.text)}</div>
       </div>
-    ).join("");
+    `).join("");
   }
 
   function addToWish(productId){
@@ -537,7 +537,7 @@
     const wrap = $("#wishItems");
     const ids = getJSON(LS.wish, []);
     if(ids.length === 0){
-      wrap.innerHTML = <div class="muted">لا يوجد عناصر</div>;
+      wrap.innerHTML = `<div class="muted">لا يوجد عناصر</div>`;
       return;
     }
     wrap.innerHTML = "";
@@ -546,13 +546,13 @@
       if(!p) return;
       const row = document.createElement("div");
       row.className = "comment";
-      row.innerHTML = 
+      row.innerHTML = `
         <div class="comment__top">
           <div class="comment__name">${esc(p.title)}</div>
           <div class="comment__time">${formatPrice(p.price)}</div>
         </div>
         <div class="comment__text">${esc(p.desc)}</div>
-      ;
+      `;
       wrap.appendChild(row);
     });
   }
@@ -593,7 +593,7 @@
     const ids = Object.keys(cart);
 
     if(ids.length === 0){
-      wrap.innerHTML = <div class="muted">السلة فارغة</div>;
+      wrap.innerHTML = `<div class="muted">السلة فارغة</div>`;
       $("#cartTotal").textContent = "0";
       return;
     }
@@ -609,7 +609,7 @@
 
       const row = document.createElement("div");
       row.className = "comment";
-      row.innerHTML = 
+      row.innerHTML = `
         <div class="comment__top">
           <div class="comment__name">${esc(p.title)}</div>
           <div class="comment__time">${formatPrice(p.price)} × ${q}</div>
@@ -619,7 +619,7 @@
           <button class="actionBtn" data-qplus="${escAttr(id)}">+</button>
           <button class="actionBtn" data-remove="${escAttr(id)}">حذف</button>
         </div>
-      ;
+      `;
       wrap.appendChild(row);
     });
 
@@ -674,7 +674,7 @@
   }
 
   function formatPrice(n){
-    return ${Number(n||0)} JD;
+    return `${Number(n||0)} JD`;
   }
 
   function debounce(fn, wait){
@@ -690,7 +690,7 @@
   }
 
   function escAttr(s){
-    return esc(s).replace(//g, "&#096;");
+    return esc(s).replace(/`/g, "&#096;");
   }
 
   function getJSON(key, fallback){
@@ -707,4 +707,3 @@
     localStorage.setItem(key, JSON.stringify(val));
   }
 })();
-
