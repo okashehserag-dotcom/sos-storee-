@@ -1,5 +1,3 @@
-
-أنت قلت:
 (() => {
   const STORE = {
     brand: "SOS STORE",
@@ -709,3 +707,4 @@
     localStorage.setItem(key, JSON.stringify(val));
   }
 })();
+
