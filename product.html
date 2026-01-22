@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>منتج</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="header">
+  <a href="javascript:history.back()">⬅ رجوع</a>
+</header>
+
+<div class="slider">
+  <img id="slide" src="images/soon.png">
+  <div class="slider-controls">
+    <button onclick="prev()">‹</button>
+    <button onclick="next()">›</button>
+  </div>
+</div>
+
+<div class="product-info">
+  <p>وصف المنتج يوضع هنا لاحقًا</p>
+
+  <button onclick="like()">❤️ لايك</button>
+  <span id="likes">0</span>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
